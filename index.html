@@ -4,19 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Открытка</title>
-  <meta name="description" content="Интерактивная открытка для Telegram WebApp" />
   <meta name="theme-color" content="#0f0f12" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
     :root {
       --fg: #f6f7fb;
-      --muted: #b7b8c6;
       --accent: #7aa2ff;
       --btn-bg: rgba(255,255,255,0.1);
       --btn-bg-hover: rgba(255,255,255,0.2);
       --radius: 14px;
-      --dur: 600ms;
     }
 
     html, body {
@@ -67,7 +64,7 @@
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: var(--radius);
-      padding: 20px 24px;
+      padding: 28px 30px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
       text-align: center;
       animation: fadeInUp 0.7s ease both;
@@ -80,9 +77,9 @@
 
     /* Текст */
     .text {
-      font-size: 18px;
-      line-height: 1.5;
-      margin: 0 0 20px;
+      font-size: clamp(21px, 5vw, 26px);
+      line-height: 1.6;
+      margin: 0 0 28px;
       opacity: 1;
       transition: opacity .6s ease, transform .6s ease;
     }
@@ -94,36 +91,30 @@
     .controls {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       align-items: center;
     }
 
     button {
-      border: 1px solid rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.25);
       background: var(--btn-bg);
       color: var(--fg);
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-size: 16px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 18px;
       cursor: pointer;
       transition: all 0.2s ease;
       width: 100%;
-      max-width: 200px;
+      max-width: 240px;
     }
     button:hover {
       background: var(--btn-bg-hover);
       border-color: rgba(255,255,255,0.3);
     }
-    button:active { transform: scale(0.98); }
+    button:active { transform: scale(0.97); }
     button.primary {
       border-color: var(--accent);
       box-shadow: inset 0 0 0 1px rgba(122,162,255,0.3);
-    }
-
-    .muted {
-      color: var(--muted);
-      font-size: 14px;
-      margin-top: 10px;
     }
 
     .hidden { display: none !important; }
@@ -131,11 +122,11 @@
     @media (max-width:480px) {
       .card {
         width: 90vw;
-        padding: 16px;
+        padding: 22px;
         border-radius: 10px;
       }
-      .text { font-size: 16px; }
-      button { font-size: 15px; }
+      .text { font-size: 22px; }
+      button { font-size: 17px; }
     }
   </style>
 </head>
@@ -145,18 +136,15 @@
       <p id="text" class="text"></p>
 
       <div class="controls">
-        <button id="prev" class="hidden">Назад</button>
         <button id="next" class="primary">Далее</button>
         <button id="optA" class="hidden">Согласна ❤️</button>
         <button id="optB" class="hidden">Не согласна 😠</button>
       </div>
-
-      <p id="hint" class="muted">Подсказка: нажимай «Далее».</p>
     </div>
   </div>
 
   <script>
-    // === Telegram WebApp адаптация ===
+    // Telegram WebApp адаптация
     try {
       if (window.Telegram && Telegram.WebApp) {
         Telegram.WebApp.ready();
@@ -164,31 +152,31 @@
       }
     } catch (e) {}
 
-    // === Контент ===
+    // Контент
     const slides = [
       "Привет, Лисица! 🦊",
-      "Ты наверное очень устала с дороги...",
-      "Может мы расслабимся с тобой только вдвоём?",
-      "Никакой работы или дел.\nТолько вечер, ужин и фильм.",
+      "Знаю, дорога забрала много сил и нервов...",
+      "Сегодня не нужно ничего доказывать — просто будь здесь.",
+      "Никаких дел, только вечер, вкусный ужин и фильм.",
       "Хочу быть рядом с тобой. Без причин. Просто так.",
-      "Ну что, ты согласна выполнить пару моих просьб?"
+      "А если я попрошу пару простых вещей — ты согласишься?"
     ];
+
     const branchA = [
-      "Приезжай ко мне. Проходи в комнату и ожидай, когда позову. Будет неплохо, если ты оденешь красивое платье."
+      "Приезжай. Войди в комнату и просто жди, пока я позову. Будет неплохо, если ты наденешь красивое платье."
     ];
+
     const branchB = [
-      "Тогда мы просто уютно посмотрим фильм и так же уютно ляжем спать."
+      "Хорошо, тогда только фильм и немного уюта. Без лишних слов."
     ];
 
     let index = 0;
     let mode = "linear";
 
     const elText = document.getElementById("text");
-    const btnPrev = document.getElementById("prev");
     const btnNext = document.getElementById("next");
     const btnA = document.getElementById("optA");
     const btnB = document.getElementById("optB");
-    const hint = document.getElementById("hint");
 
     function renderText(t, dir = "up") {
       elText.classList.remove("show", "hide-up", "hide-down");
@@ -204,38 +192,27 @@
       if (mode === "linear") {
         if (index < slides.length - 1) {
           renderText(slides[index], dir);
-          btnPrev.classList.toggle("hidden", index === 0);
-          btnNext.classList.toggle("hidden", index >= slides.length - 1);
+          btnNext.classList.remove("hidden");
           btnA.classList.add("hidden");
           btnB.classList.add("hidden");
-          hint.classList.remove("hidden");
         } else {
           renderText(slides[index], dir);
-          btnPrev.classList.remove("hidden");
           btnNext.classList.add("hidden");
           btnA.classList.remove("hidden");
           btnB.classList.remove("hidden");
-          hint.classList.add("hidden");
         }
       } else if (mode === "branchA") {
         renderText(branchA[0], dir);
-        btnPrev.classList.add("hidden");
-        btnNext.classList.add("hidden");
         btnA.classList.add("hidden");
         btnB.classList.add("hidden");
-        hint.classList.add("hidden");
       } else if (mode === "branchB") {
         renderText(branchB[0], dir);
-        btnPrev.classList.add("hidden");
-        btnNext.classList.add("hidden");
         btnA.classList.add("hidden");
         btnB.classList.add("hidden");
-        hint.classList.add("hidden");
       }
     }
 
     btnNext.addEventListener("click", () => { index++; update("up"); });
-    btnPrev.addEventListener("click", () => { index--; update("down"); });
     btnA.addEventListener("click", () => { mode = "branchA"; update("up"); });
     btnB.addEventListener("click", () => { mode = "branchB"; update("up"); });
 
