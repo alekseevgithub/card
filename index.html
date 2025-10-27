@@ -9,23 +9,23 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    :root{
-      --bg:#0f0f12;
-      --fg:#f6f7fb;
-      --muted:#a9acc2;
-      --accent:#7aa2ff;
-      --btn-bg:#1a1d25;
-      --btn-bg-hover:#222634;
-      --radius:16px;
-      --dur:600ms;
+    :root {
+      --bg: #0f0f12;
+      --fg: #f6f7fb;
+      --muted: #a9acc2;
+      --accent: #7aa2ff;
+      --btn-bg: #1a1d25;
+      --btn-bg-hover: #222634;
+      --radius: 16px;
+      --dur: 600ms;
 
-      /* управляем фоновым изображением через JS */
-      --bg-url: none;          /* будет url('...') */
-      --bg-image-opacity: .38; /* прозрачность фото под градиентом */
+      /* Настройка фонового фото */
+      --bg-url: none;
+      --bg-image-opacity: 0.35;
     }
 
-    /* Telegram тема (если открыто в WebApp) */
-    .tg-theme{
+    /* Telegram тема */
+    .tg-theme {
       --bg: var(--tg-theme-bg-color, #0f0f12);
       --fg: var(--tg-theme-text-color, #f6f7fb);
       --muted: var(--tg-theme-hint-color, #a9acc2);
@@ -34,112 +34,123 @@
       --btn-bg-hover: color-mix(in srgb, var(--bg) 78%, white);
     }
 
-    html,body{
-      height:100%;
-      margin:0;
-      color:var(--fg);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
-      -webkit-text-size-adjust:100%;
-      overflow: hidden; /* никаких прокруток — всё строго по центру */
-      background: var(--bg);
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      color: var(--fg);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+      -webkit-text-size-adjust: 100%;
     }
 
-    /* Слой фото на заднем плане */
-    body::before{
-      content:"";
+    /* Фото на фоне */
+    body::before {
+      content: "";
       position: fixed;
-      inset:0;
+      inset: 0;
       background-image: var(--bg-url);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
       opacity: var(--bg-image-opacity);
-      z-index:-2;
-      transition: opacity .4s ease;
-    }
-    /* Виньетка/градиент сверху — чтобы текст читался на любом фото */
-    body::after{
-      content:"";
-      position: fixed;
-      inset:0;
-      background:
-        radial-gradient(1200px 600px at 70% -10%, rgba(255,255,255,.06) 0%, transparent 50%),
-        linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 40%, rgba(0,0,0,.55) 100%);
-      z-index:-1;
-      pointer-events:none;
+      z-index: -2;
     }
 
-    .wrap{
-      min-height:100svh;
-      display:grid;
-      place-items:center;          /* абсолютный центр по вертикали и горизонтали */
-      padding:24px;
-      padding-left:max(24px, env(safe-area-inset-left));
-      padding-right:max(24px, env(safe-area-inset-right));
-      padding-bottom:max(24px, env(safe-area-inset-bottom));
+    /* затемнение для читаемости текста */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.6) 100%);
+      z-index: -1;
+    }
+
+    .wrap {
+      height: 100svh;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
       box-sizing: border-box;
     }
 
-    .card{
-      width:min(680px, 92vw);
-      /* полупрозрачный блок текста */
-      background: rgba(15, 17, 23, 0.55);
+    .card {
+      width: min(680px, 92vw);
+      background: rgba(20, 22, 30, 0.55);
       backdrop-filter: blur(8px);
-      border:1px solid rgba(255,255,255,0.14);
-      border-radius:var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius);
       padding: clamp(18px, 4vw, 28px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
 
-    /* Кинематографическая смена: старый уходит вверх, новый приходит снизу */
-    .text{
+    /* Плавное появление/уход текста */
+    .text {
       font-size: clamp(18px, 3.8vw, 22px);
-      line-height:1.6;
-      margin:0 0 22px;
-      min-height:6lh;              /* чтобы карточка не прыгала между слайдами */
-      opacity:1;
-      white-space: pre-line;       /* поддержка \n в строках */
+      line-height: 1.6;
+      margin: 0 0 22px;
+      min-height: 6lh;
+      white-space: pre-line;
+      opacity: 1;
       transition: transform .6s ease, opacity .6s ease;
     }
-    .text.hide-up{   opacity:0; transform: translateY(-25px); }
-    .text.hide-down{ opacity:0; transform: translateY( 25px); }
-    .text.show{      opacity:1; transform: translateY(  0px); }
+    .text.hide-up { opacity: 0; transform: translateY(-25px); }
+    .text.hide-down { opacity: 0; transform: translateY(25px); }
+    .text.show { opacity: 1; transform: translateY(0); }
 
-    @media (prefers-reduced-motion: reduce){
-      .text{ transition:none; }
+    @media (prefers-reduced-motion: reduce) {
+      .text { transition: none; }
     }
 
-    .controls{ display:flex; gap:10px; flex-wrap:wrap; }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
-    button{
-      appearance:none;
-      border:1px solid rgba(255,255,255,0.16);
-      background:var(--btn-bg);
-      color:var(--fg);
-      padding:12px 16px;
-      border-radius:12px;
-      font-size:16px;
-      cursor:pointer;
+    button {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: var(--btn-bg);
+      color: var(--fg);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
       transition: transform .06s ease, background .2s ease, border-color .2s ease;
-      min-height:44px; min-width:44px;
-      touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+      min-height: 44px;
+      min-width: 44px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
-    button:hover{ background:var(--btn-bg-hover); border-color:rgba(255,255,255,0.28); }
-    button:active{ transform: translateY(1px); }
-    button.primary{
+    button:hover { background: var(--btn-bg-hover); border-color: rgba(255,255,255,0.28); }
+    button:active { transform: translateY(1px); }
+    button.primary {
       border-color: color-mix(in srgb, var(--accent), transparent 50%);
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 75%);
     }
 
-    .muted{ color:var(--muted); font-size:14px; margin-top:10px; }
-    .hidden{ display:none !important; }
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 10px;
+    }
 
-    @media (max-width:480px){
-      .card{ padding:18px; border-radius:12px; }
-      .controls{ gap:8px; }
-      button{ flex:1 1 100%; }
-      #prev{ order:-1; }
-      .muted{ font-size:13px; }
+    .hidden { display: none !important; }
+
+    @media (max-width:480px) {
+      .card { padding: 18px; border-radius: 12px; }
+      .controls { gap: 8px; }
+      button { flex: 1 1 100%; }
+      #prev { order: -1; }
+      .muted { font-size: 13px; }
     }
   </style>
 </head>
@@ -162,24 +173,24 @@
   </div>
 
   <script>
-    // --- Настройка фонового фото: вставь сюда ссылку или оставь "" ---
-    const BG_URL = ""; // например "https://images.unsplash.com/photo-...jpg"
-    if (BG_URL){
-      document.body.style.setProperty('--bg-url', `url('${BG_URL}')`);
+    // === Настройка фонового фото ===
+    const BG_URL = "./background.jpg"; // можно заменить на ссылку
+    if (BG_URL) {
+      document.body.style.setProperty("--bg-url", `url('${BG_URL}')`);
     }
 
-    // Telegram WebApp: тема + высота
+    // === Telegram WebApp интеграция ===
     (() => {
-      try{
-        if (window.Telegram && Telegram.WebApp){
-          document.body.classList.add('tg-theme');
+      try {
+        if (window.Telegram && Telegram.WebApp) {
+          document.body.classList.add("tg-theme");
           Telegram.WebApp.ready();
           Telegram.WebApp.expand();
         }
-      }catch(e){}
+      } catch (e) {}
     })();
 
-    // ---- Контент
+    // === Контент ===
     const slides = [
       "Привет, Лисица! 🦊",
       "Ты наверное очень устала с дороги...",
@@ -196,7 +207,7 @@
       "Тогда мы просто уютно посмотрим фильм и так же уютно ляжем спать."
     ];
 
-    // ---- Сброс на первый слайд при перезагрузке
+    // === Состояние ===
     let index = 0;
     let mode = "linear"; // "linear" | "branchA" | "branchB"
 
@@ -207,51 +218,52 @@
     const btnB = document.getElementById("optB");
     const hint = document.getElementById("hint");
 
-    // Анимация смены текста
-    function renderText(newText, direction = "up"){
-      elText.classList.remove("show","hide-up","hide-down");
+    function renderText(newText, direction = "up") {
+      elText.classList.remove("show", "hide-up", "hide-down");
       elText.classList.add(direction === "up" ? "hide-up" : "hide-down");
       setTimeout(() => {
         elText.textContent = newText;
-        elText.classList.remove("hide-up","hide-down");
+        elText.classList.remove("hide-up", "hide-down");
         elText.classList.add("show");
       }, 300);
     }
 
-    function showLinear(dir="up"){
+    function showLinear(dir = "up") {
       renderText(slides[index], dir);
       btnPrev.classList.toggle("hidden", index === 0);
       btnNext.classList.toggle("hidden", index >= slides.length - 1);
-      btnA.classList.add("hidden"); btnB.classList.add("hidden");
+      btnA.classList.add("hidden");
+      btnB.classList.add("hidden");
       hint.classList.remove("hidden");
     }
 
-    function showFinalQuestion(dir="up"){
+    function showFinalQuestion(dir = "up") {
       renderText(finalQuestion, dir);
       btnPrev.classList.remove("hidden");
       btnNext.classList.add("hidden");
-      btnA.classList.remove("hidden"); btnB.classList.remove("hidden");
+      btnA.classList.remove("hidden");
+      btnB.classList.remove("hidden");
       hint.classList.add("hidden");
     }
 
-    function showBranch(arr, dir="up"){
+    function showBranch(arr, dir = "up") {
       const i = Math.max(0, Math.min(index - slides.length, arr.length - 1));
       renderText(arr[i], dir);
       btnPrev.classList.toggle("hidden", i === 0);
       btnNext.classList.toggle("hidden", i >= arr.length - 1);
-      btnA.classList.add("hidden"); btnB.classList.add("hidden");
+      btnA.classList.add("hidden");
+      btnB.classList.add("hidden");
       hint.classList.add("hidden");
     }
 
-    function update(dir="up"){
-      if (mode === "linear"){
+    function update(dir = "up") {
+      if (mode === "linear") {
         if (index < slides.length - 1) showLinear(dir);
         else showFinalQuestion(dir);
-      } else if (mode === "branchA"){ showBranch(branchA, dir);
-      } else if (mode === "branchB"){ showBranch(branchB, dir); }
+      } else if (mode === "branchA") showBranch(branchA, dir);
+      else if (mode === "branchB") showBranch(branchB, dir);
     }
 
-    // Навигация
     btnNext.addEventListener("click", () => {
       if (mode === "linear") index = Math.min(index + 1, slides.length - 1);
       else index++;
@@ -259,20 +271,26 @@
     });
 
     btnPrev.addEventListener("click", () => {
-      if (mode === "linear"){
+      if (mode === "linear") {
         index = Math.max(0, index - 1);
         update("down");
       } else {
         const start = slides.length;
-        if (index <= start){ mode = "linear"; index = slides.length - 1; update("down"); }
-        else { index--; update("down"); }
+        if (index <= start) {
+          mode = "linear";
+          index = slides.length - 1;
+          update("down");
+        } else {
+          index--;
+          update("down");
+        }
       }
     });
 
     btnA.addEventListener("click", () => { mode = "branchA"; index = slides.length; update("up"); });
     btnB.addEventListener("click", () => { mode = "branchB"; index = slides.length; update("up"); });
 
-    // Первый показ — строго по центру
+    // Старт
     elText.textContent = slides[0];
     elText.classList.add("show");
     update("up");
