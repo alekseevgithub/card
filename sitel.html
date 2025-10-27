@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Открытка</title>
+  <meta name="description" content="Интерактивная открытка для Telegram WebApp" />
+  <meta name="theme-color" content="#0f0f12" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    :root{
+      --bg:#0f0f12;
+      --fg:#f6f7fb;
+      --muted:#a9acc2;
+      --accent:#7aa2ff;
+      --btn-bg:#1a1d25;
+      --btn-bg-hover:#222634;
+      --radius:16px;
+      --dur:600ms;
+
+      /* управляем фоновым изображением через JS */
+      --bg-url: none;          /* будет url('...') */
+      --bg-image-opacity: .38; /* прозрачность фото под градиентом */
+    }
+
+    /* Telegram тема (если открыто в WebApp) */
+    .tg-theme{
+      --bg: var(--tg-theme-bg-color, #0f0f12);
+      --fg: var(--tg-theme-text-color, #f6f7fb);
+      --muted: var(--tg-theme-hint-color, #a9acc2);
+      --accent: var(--tg-theme-button-color, #7aa2ff);
+      --btn-bg: color-mix(in srgb, var(--bg) 85%, white);
+      --btn-bg-hover: color-mix(in srgb, var(--bg) 78%, white);
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      color:var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      -webkit-text-size-adjust:100%;
+      overflow: hidden; /* никаких прокруток — всё строго по центру */
+      background: var(--bg);
+    }
+
+    /* Слой фото на заднем плане */
+    body::before{
+      content:"";
+      position: fixed;
+      inset:0;
+      background-image: var(--bg-url);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: var(--bg-image-opacity);
+      z-index:-2;
+      transition: opacity .4s ease;
+    }
+    /* Виньетка/градиент сверху — чтобы текст читался на любом фото */
+    body::after{
+      content:"";
+      position: fixed;
+      inset:0;
+      background:
+        radial-gradient(1200px 600px at 70% -10%, rgba(255,255,255,.06) 0%, transparent 50%),
+        linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.35) 40%, rgba(0,0,0,.55) 100%);
+      z-index:-1;
+      pointer-events:none;
+    }
+
+    .wrap{
+      min-height:100svh;
+      display:grid;
+      place-items:center;          /* абсолютный центр по вертикали и горизонтали */
+      padding:24px;
+      padding-left:max(24px, env(safe-area-inset-left));
+      padding-right:max(24px, env(safe-area-inset-right));
+      padding-bottom:max(24px, env(safe-area-inset-bottom));
+      box-sizing: border-box;
+    }
+
+    .card{
+      width:min(680px, 92vw);
+      /* полупрозрачный блок текста */
+      background: rgba(15, 17, 23, 0.55);
+      backdrop-filter: blur(8px);
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:var(--radius);
+      padding: clamp(18px, 4vw, 28px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    /* Кинематографическая смена: старый уходит вверх, новый приходит снизу */
+    .text{
+      font-size: clamp(18px, 3.8vw, 22px);
+      line-height:1.6;
+      margin:0 0 22px;
+      min-height:6lh;              /* чтобы карточка не прыгала между слайдами */
+      opacity:1;
+      white-space: pre-line;       /* поддержка \n в строках */
+      transition: transform .6s ease, opacity .6s ease;
+    }
+    .text.hide-up{   opacity:0; transform: translateY(-25px); }
+    .text.hide-down{ opacity:0; transform: translateY( 25px); }
+    .text.show{      opacity:1; transform: translateY(  0px); }
+
+    @media (prefers-reduced-motion: reduce){
+      .text{ transition:none; }
+    }
+
+    .controls{ display:flex; gap:10px; flex-wrap:wrap; }
+
+    button{
+      appearance:none;
+      border:1px solid rgba(255,255,255,0.16);
+      background:var(--btn-bg);
+      color:var(--fg);
+      padding:12px 16px;
+      border-radius:12px;
+      font-size:16px;
+      cursor:pointer;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease;
+      min-height:44px; min-width:44px;
+      touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    }
+    button:hover{ background:var(--btn-bg-hover); border-color:rgba(255,255,255,0.28); }
+    button:active{ transform: translateY(1px); }
+    button.primary{
+      border-color: color-mix(in srgb, var(--accent), transparent 50%);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent), transparent 75%);
+    }
+
+    .muted{ color:var(--muted); font-size:14px; margin-top:10px; }
+    .hidden{ display:none !important; }
+
+    @media (max-width:480px){
+      .card{ padding:18px; border-radius:12px; }
+      .controls{ gap:8px; }
+      button{ flex:1 1 100%; }
+      #prev{ order:-1; }
+      .muted{ font-size:13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap" role="main">
+    <div class="card" aria-live="polite">
+      <p id="text" class="text"></p>
+
+      <div class="controls">
+        <button id="prev" aria-label="Назад" class="hidden">Назад</button>
+        <button id="next" aria-label="Далее" class="primary">Далее</button>
+
+        <!-- финальные варианты ответа -->
+        <button id="optA" class="hidden">Согласна ❤️</button>
+        <button id="optB" class="hidden">Не согласна 😠</button>
+      </div>
+
+      <p id="hint" class="muted">Подсказка: нажимай «Далее».</p>
+    </div>
+  </div>
+
+  <script>
+    // --- Настройка фонового фото: вставь сюда ссылку или оставь "" ---
+    const BG_URL = ""; // например "https://images.unsplash.com/photo-...jpg"
+    if (BG_URL){
+      document.body.style.setProperty('--bg-url', `url('${BG_URL}')`);
+    }
+
+    // Telegram WebApp: тема + высота
+    (() => {
+      try{
+        if (window.Telegram && Telegram.WebApp){
+          document.body.classList.add('tg-theme');
+          Telegram.WebApp.ready();
+          Telegram.WebApp.expand();
+        }
+      }catch(e){}
+    })();
+
+    // ---- Контент
+    const slides = [
+      "Привет, Лисица! 🦊",
+      "Ты наверное очень устала с дороги...",
+      "Может мы расслабимся с тобой только вдвоём?",
+      "Никакой работы или дел.\nТолько вечер, ужин и фильм.",
+      "Хочу быть рядом с тобой. Без причин. Просто так.",
+      "Ну что, ты согласна выполнить пару моих просьб?"
+    ];
+    const finalQuestion = slides[slides.length - 1];
+    const branchA = [
+      "Приезжай ко мне. Проходи в комнату и ожидай когда позову. Будет неплохо если ты оденешь красивое платье."
+    ];
+    const branchB = [
+      "Тогда мы просто уютно посмотрим фильм и так же уютно ляжем спать."
+    ];
+
+    // ---- Сброс на первый слайд при перезагрузке
+    let index = 0;
+    let mode = "linear"; // "linear" | "branchA" | "branchB"
+
+    const elText = document.getElementById("text");
+    const btnPrev = document.getElementById("prev");
+    const btnNext = document.getElementById("next");
+    const btnA = document.getElementById("optA");
+    const btnB = document.getElementById("optB");
+    const hint = document.getElementById("hint");
+
+    // Анимация смены текста
+    function renderText(newText, direction = "up"){
+      elText.classList.remove("show","hide-up","hide-down");
+      elText.classList.add(direction === "up" ? "hide-up" : "hide-down");
+      setTimeout(() => {
+        elText.textContent = newText;
+        elText.classList.remove("hide-up","hide-down");
+        elText.classList.add("show");
+      }, 300);
+    }
+
+    function showLinear(dir="up"){
+      renderText(slides[index], dir);
+      btnPrev.classList.toggle("hidden", index === 0);
+      btnNext.classList.toggle("hidden", index >= slides.length - 1);
+      btnA.classList.add("hidden"); btnB.classList.add("hidden");
+      hint.classList.remove("hidden");
+    }
+
+    function showFinalQuestion(dir="up"){
+      renderText(finalQuestion, dir);
+      btnPrev.classList.remove("hidden");
+      btnNext.classList.add("hidden");
+      btnA.classList.remove("hidden"); btnB.classList.remove("hidden");
+      hint.classList.add("hidden");
+    }
+
+    function showBranch(arr, dir="up"){
+      const i = Math.max(0, Math.min(index - slides.length, arr.length - 1));
+      renderText(arr[i], dir);
+      btnPrev.classList.toggle("hidden", i === 0);
+      btnNext.classList.toggle("hidden", i >= arr.length - 1);
+      btnA.classList.add("hidden"); btnB.classList.add("hidden");
+      hint.classList.add("hidden");
+    }
+
+    function update(dir="up"){
+      if (mode === "linear"){
+        if (index < slides.length - 1) showLinear(dir);
+        else showFinalQuestion(dir);
+      } else if (mode === "branchA"){ showBranch(branchA, dir);
+      } else if (mode === "branchB"){ showBranch(branchB, dir); }
+    }
+
+    // Навигация
+    btnNext.addEventListener("click", () => {
+      if (mode === "linear") index = Math.min(index + 1, slides.length - 1);
+      else index++;
+      update("up");
+    });
+
+    btnPrev.addEventListener("click", () => {
+      if (mode === "linear"){
+        index = Math.max(0, index - 1);
+        update("down");
+      } else {
+        const start = slides.length;
+        if (index <= start){ mode = "linear"; index = slides.length - 1; update("down"); }
+        else { index--; update("down"); }
+      }
+    });
+
+    btnA.addEventListener("click", () => { mode = "branchA"; index = slides.length; update("up"); });
+    btnB.addEventListener("click", () => { mode = "branchB"; index = slides.length; update("up"); });
+
+    // Первый показ — строго по центру
+    elText.textContent = slides[0];
+    elText.classList.add("show");
+    update("up");
+  </script>
+</body>
+</html>
