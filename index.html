@@ -129,6 +129,25 @@
       .text { font-size: 22px; }
       button { font-size: 17px; }
     }
+
+    /* Небольшое уведомление */
+    #notify {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 15px;
+      opacity: 0;
+      transition: opacity .4s ease;
+      pointer-events: none;
+    }
+    #notify.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -144,6 +163,8 @@
       </div>
     </div>
   </div>
+
+  <div id="notify">Ответ отправлен 💌</div>
 
   <script>
     // Telegram адаптация
@@ -183,6 +204,7 @@
     const btnA = document.getElementById("optA");
     const btnB = document.getElementById("optB");
     const btnSecret = document.getElementById("secret");
+    const notify = document.getElementById("notify");
 
     function renderText(t, dir = "up") {
       elText.classList.remove("show", "hide-up", "hide-down");
@@ -192,6 +214,11 @@
         elText.classList.remove("hide-up", "hide-down");
         elText.classList.add("show");
       }, 250);
+    }
+
+    function showNotify() {
+      notify.classList.add("show");
+      setTimeout(() => notify.classList.remove("show"), 2000);
     }
 
     function update(dir = "up") {
@@ -221,14 +248,37 @@
       }
     }
 
+    // === Настройки для отправки ===
+    const BOT_TOKEN = "8353271744:AAH-yziWh7Qr2W83wwoNmRjjjMpv4WN3m3M"; 
+    const ADMIN_ID = "570141917";
+
+    function sendAnswer(answer) {
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${ADMIN_ID}&text=${encodeURIComponent("Ответ: " + answer)}`)
+        .then(r => showNotify())
+        .catch(e => console.error("Ошибка отправки:", e));
+    }
+
+    // === Логика кнопок ===
     btnNext.addEventListener("click", () => { index++; update("up"); });
-    btnA.addEventListener("click", () => { mode = "branchA"; update("up"); });
-    btnB.addEventListener("click", () => { mode = "branchB"; update("up"); });
+
+    btnA.addEventListener("click", () => {
+      mode = "branchA";
+      update("up");
+      sendAnswer("Согласна ❤️");
+    });
+
+    btnB.addEventListener("click", () => {
+      mode = "branchB";
+      update("up");
+      sendAnswer("Не согласна 😠");
+    });
+
     btnSecret.addEventListener("click", () => {
       renderText(secretPoem, "up");
       btnSecret.classList.add("hidden");
     });
 
+    // Старт
     elText.textContent = slides[0];
     elText.classList.add("show");
   </script>
