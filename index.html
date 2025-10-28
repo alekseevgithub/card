@@ -1,110 +1,179 @@
-<script>
-  // === Настройка контента ===
-  const slides = [
-    "Знаешь, иногда жизнь просто требует немного тишины.",
-    "Не решений, не объяснений, не борьбы — просто паузы.",
-    "Чтобы выдохнуть, вспомнить себя и почувствовать, что всё не так страшно, как кажется.",
-    "Не нужно спешить. Всё, что должно прийти, обязательно придёт — в своё время, своим шагом.",
-    "Даже если сейчас кажется, что ничего не движется, внутри всё равно происходит что-то важное.",
-    "Просто не всегда это видно сразу.",
-    "Позволь себе немного покоя. Пить чай без мыслей, слушать музыку, смотреть в окно.",
-    "Пусть этот момент будет только твоим. Мир всё равно подождёт.",
-    "В тебе уже есть всё, что нужно, чтобы справиться.",
-    "Даже если ты этого не чувствуешь — сила, спокойствие, свет.",
-    "Они просто прячутся, чтобы ты мог отдохнуть.",
-    "И когда почувствуешь, что готов — просто сделай маленький шаг вперёд.",
-    "Без давления, без ожиданий.",
-    "Потому что иногда достаточно просто быть.",
-    "И этого уже достаточно.",
-    "Я тебя жду."
-  ];
-
-  // Убираем финальный вопрос и ветки — открытка теперь линейная
-  const finalQuestion = "";
-  const branchA = [];
-  const branchB = [];
-
-  // === (опционально) ограничение по дате ===
-  const validDate = ""; // пример: "2025-10-27"
-  if (validDate) {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, "0");
-    const d = String(today.getDate()).padStart(2, "0");
-    const todayStr = `${y}-${m}-${d}`;
-    if (todayStr !== validDate) {
-      document.body.innerHTML =
-        "<div class='wrap'><div class='card'><p class='text' style='opacity:1;transform:none'>Открытка была доступна только в выбранный день.</p></div></div>";
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Открытка — Привет, Солнце ☀️</title>
+  <style>
+    /* === Базовое оформление === */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      background: linear-gradient(135deg, #fffaf3, #f9ede3);
+      color: #333;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-  }
 
-  // === Элементы ===
-  const elText = document.getElementById("text");
-  const btnPrev = document.getElementById("prev");
-  const btnNext = document.getElementById("next");
-  const btnA = document.getElementById("optA");
-  const btnB = document.getElementById("optB");
-  const hint = document.getElementById("hint");
+    .wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      padding: 20px;
+    }
 
-  let index = 0;
-  let mode = "linear";
+    .card {
+      background: #ffffffcc;
+      backdrop-filter: blur(8px);
+      border-radius: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      padding: 40px 30px;
+      max-width: 500px;
+      text-align: center;
+      transition: all 0.4s ease;
+    }
 
-  const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+    .text {
+      font-size: 1.25rem;
+      line-height: 1.6;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
 
-  function restartFade() {
-    elText.classList.remove("text");
-    void elText.offsetWidth;
-    elText.classList.add("text");
-  }
+    .text.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
-  function renderText(t) {
-    restartFade();
-    elText.textContent = t;
-  }
+    .controls {
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
 
-  function showLinear() {
-    renderText(slides[index]);
-    btnPrev.classList.toggle("hidden", index === 0);
-    btnNext.classList.toggle("hidden", index === slides.length - 1);
-    btnA.classList.add("hidden");
-    btnB.classList.add("hidden");
-    hint.classList.remove("hidden");
-  }
+    button {
+      background: #f0d9b5;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
 
-  function update() {
-    showLinear();
-    try { localStorage.setItem("cardState", JSON.stringify({ index, mode })); } catch {}
-  }
+    button:hover {
+      background: #f7e5c4;
+      transform: translateY(-2px);
+    }
 
-  // Навигация
-  btnNext.addEventListener("click", () => {
-    index = Math.min(index + 1, slides.length - 1);
+    button.hidden {
+      display: none;
+    }
+
+    .hint {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    /* === Анимация приветствия === */
+    .sunrise {
+      animation: fadeInUp 1.8s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <p id="text" class="text"></p>
+      <div class="controls">
+        <button id="prev" class="hidden">← Назад</button>
+        <button id="next">Далее →</button>
+      </div>
+      <p id="hint" class="hint">Нажимай “Далее” или Enter</p>
+    </div>
+  </div>
+
+  <script>
+    // === Контент открытки ===
+    const slides = [
+      "Привет, Солнце ☀️",
+      "Знаешь, иногда жизнь просто требует немного тишины.",
+      "Не решений, не объяснений, не борьбы — просто паузы.",
+      "Чтобы выдохнуть, вспомнить себя и почувствовать, что всё не так страшно, как кажется.",
+      "Не нужно спешить. Всё, что должно прийти, обязательно придёт — в своё время, своим шагом.",
+      "Даже если сейчас кажется, что ничего не движется, внутри всё равно происходит что-то важное.",
+      "Просто не всегда это видно сразу.",
+      "Позволь себе немного покоя. Пить чай без мыслей, слушать музыку, смотреть в окно.",
+      "Пусть этот момент будет только твоим. Мир всё равно подождёт.",
+      "В тебе уже есть всё, что нужно, чтобы справиться.",
+      "Даже если ты этого не чувствуешь — сила, спокойствие, свет.",
+      "Они просто прячутся, чтобы ты мог отдохнуть.",
+      "И когда почувствуешь, что готов — просто сделай маленький шаг вперёд.",
+      "Без давления, без ожиданий.",
+      "Потому что иногда достаточно просто быть.",
+      "И этого уже достаточно.",
+      "Я тебя жду."
+    ];
+
+    const elText = document.getElementById("text");
+    const btnPrev = document.getElementById("prev");
+    const btnNext = document.getElementById("next");
+    const hint = document.getElementById("hint");
+
+    let index = 0;
+
+    function renderText(t) {
+      elText.classList.remove("show", "sunrise");
+      void elText.offsetWidth;
+      elText.textContent = t;
+      if (index === 0) elText.classList.add("sunrise");
+      elText.classList.add("show");
+    }
+
+    function update() {
+      renderText(slides[index]);
+      btnPrev.classList.toggle("hidden", index === 0);
+      btnNext.classList.toggle("hidden", index === slides.length - 1);
+    }
+
+    btnNext.addEventListener("click", () => {
+      if (index < slides.length - 1) index++;
+      update();
+    });
+
+    btnPrev.addEventListener("click", () => {
+      if (index > 0) index--;
+      update();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (!btnNext.classList.contains("hidden")) btnNext.click();
+      } else if (e.key === "ArrowLeft") {
+        if (!btnPrev.classList.contains("hidden")) btnPrev.click();
+      }
+    });
+
     update();
-  });
-
-  btnPrev.addEventListener("click", () => {
-    index = Math.max(0, index - 1);
-    update();
-  });
-
-  // Клавиатура
-  window.addEventListener("keydown", (e) => {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    if (tag === "input" || tag === "textarea") return;
-    if ((e.key === "Enter" || e.key === " ") && !btnNext.classList.contains("hidden")) {
-      e.preventDefault();
-      btnNext.click();
-    }
-    if (e.key === "ArrowLeft" && !btnPrev.classList.contains("hidden")) btnPrev.click();
-  });
-
-  try {
-    const saved = JSON.parse(localStorage.getItem("cardState") || "null");
-    if (saved && typeof saved.index === "number" && saved.mode) {
-      index = saved.index;
-      mode = saved.mode;
-    }
-  } catch {}
-
-  update();
-</script>
+  </script>
+</body>
+</html>
