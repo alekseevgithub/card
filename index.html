@@ -83,12 +83,13 @@
       opacity: 1;
       transition: opacity .6s ease, transform .6s ease;
       white-space: pre-line;
+      min-height: 6lh;
     }
     .text.hide-up { opacity: 0; transform: translateY(-20px); }
     .text.hide-down { opacity: 0; transform: translateY(20px); }
     .text.show { opacity: 1; transform: translateY(0); }
 
-    /* Кнопки */
+    /* Кнопки / элементы управления */
     .controls {
       display: flex;
       flex-direction: column;
@@ -117,6 +118,36 @@
       border-color: var(--accent);
       box-shadow: inset 0 0 0 1px rgba(122,162,255,0.3);
     }
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 240px;
+    }
+
+    /* Группа ввода */
+    .input-group {
+      width: 100%;
+      max-width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+    textarea {
+      width: 100%;
+      min-height: 90px;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.08);
+      color: var(--fg);
+      padding: 10px 12px;
+      font-size: 16px;
+      outline: none;
+    }
+    textarea::placeholder { color: rgba(255,255,255,0.7); }
 
     .hidden { display: none !important; }
 
@@ -128,6 +159,7 @@
       }
       .text { font-size: 22px; }
       button { font-size: 17px; }
+      .btn-row { grid-template-columns: 1fr; }
     }
 
     /* Небольшое уведомление */
@@ -145,9 +177,7 @@
       transition: opacity .4s ease;
       pointer-events: none;
     }
-    #notify.show {
-      opacity: 1;
-    }
+    #notify.show { opacity: 1; }
   </style>
 </head>
 <body>
@@ -156,10 +186,36 @@
       <p id="text" class="text"></p>
 
       <div class="controls">
+        <!-- Основной поток -->
         <button id="next" class="primary">Далее</button>
-        <button id="optA" class="hidden">Согласна ❤️</button>
-        <button id="optB" class="hidden">Не согласна 😠</button>
+
+        <!-- Конец линейных слайдов -->
+        <div id="finalOptions" class="btn-row hidden">
+          <button id="optA">Согласна ❤️</button>
+          <button id="optB">Не согласна 😠</button>
+        </div>
+
+        <!-- Секрет и продолжение -->
         <button id="secret" class="hidden">Секрет 🔒</button>
+        <button id="continue" class="hidden">Далее</button>
+
+        <!-- Вопрос после веток -->
+        <div id="questionBlock" class="hidden">
+          <div class="text" id="questionText" style="margin: 10px 0 16px; font-size: 20px;">
+            Хочешь мне что-нибудь сказать?
+          </div>
+          <div class="btn-row">
+            <button id="answerYes">Да</button>
+            <button id="answerNo">Нет</button>
+          </div>
+          <button id="answerInPerson" style="max-width:240px;">Скажу лично</button>
+        </div>
+
+        <!-- Поле ввода для "Да" -->
+        <div id="inputBlock" class="input-group hidden">
+          <textarea id="msg" placeholder="Напиши здесь своё сообщение..."></textarea>
+          <button id="sendMsg">Отправить 💌</button>
+        </div>
       </div>
     </div>
   </div>
@@ -188,24 +244,39 @@
     const branchA = [
       "Приезжай. Войди в комнату и просто жди, пока я позову. Будет неплохо, если ты наденешь красивое платье."
     ];
-
     const branchB = [
       "Хорошо, тогда только фильм и немного уюта. Без лишних слов."
     ];
-
     const secretPoem =
       "Без слов, без шума, без огня —\nВся нежность — это ты и я.\nПусть вечер этот, как секрет,\nХранит тепло наших планет.";
 
+    // Состояния
     let index = 0;
-    let mode = "linear";
+    let mode = "linear";     // linear | choice | branchA | branchB | secret | question | input | done
+    let lastMainChoice = ""; // "Согласна ❤️" | "Не согласна 😠"
 
+    // Узлы
     const elText = document.getElementById("text");
     const btnNext = document.getElementById("next");
+    const finalOptions = document.getElementById("finalOptions");
     const btnA = document.getElementById("optA");
     const btnB = document.getElementById("optB");
     const btnSecret = document.getElementById("secret");
+    const btnContinue = document.getElementById("continue");
+
+    const questionBlock = document.getElementById("questionBlock");
+    const questionText = document.getElementById("questionText");
+    const btnYes = document.getElementById("answerYes");
+    const btnNo = document.getElementById("answerNo");
+    const btnInPerson = document.getElementById("answerInPerson");
+
+    const inputBlock = document.getElementById("inputBlock");
+    const txtMsg = document.getElementById("msg");
+    const btnSendMsg = document.getElementById("sendMsg");
+
     const notify = document.getElementById("notify");
 
+    // Анимация текста
     function renderText(t, dir = "up") {
       elText.classList.remove("show", "hide-up", "hide-down");
       elText.classList.add(dir === "up" ? "hide-up" : "hide-down");
@@ -218,69 +289,176 @@
 
     function showNotify() {
       notify.classList.add("show");
-      setTimeout(() => notify.classList.remove("show"), 2000);
+      setTimeout(() => notify.classList.remove("show"), 1800);
     }
 
+    // Показ вопроса с тремя опциями
+    function showQuestion() {
+      mode = "question";
+      renderText("Хочешь мне что-нибудь сказать?", "up");
+      questionBlock.classList.remove("hidden");
+      inputBlock.classList.add("hidden");
+      btnSecret.classList.add("hidden");
+      btnContinue.classList.add("hidden");
+      btnNext.classList.add("hidden");
+      finalOptions.classList.add("hidden");
+    }
+
+    // Главный апдейтер
     function update(dir = "up") {
+      // Линейные слайды 0..(n-2), затем слайд-вопрос (n-1) → выбор A/B
       if (mode === "linear") {
         if (index < slides.length - 1) {
           renderText(slides[index], dir);
           btnNext.classList.remove("hidden");
-          btnA.classList.add("hidden");
-          btnB.classList.add("hidden");
-          btnSecret.classList.add("hidden");
+          finalOptions.classList.add("hidden");
         } else {
           renderText(slides[index], dir);
           btnNext.classList.add("hidden");
-          btnA.classList.remove("hidden");
-          btnB.classList.remove("hidden");
+          finalOptions.classList.remove("hidden");
         }
-      } else if (mode === "branchA") {
-        renderText(branchA[0], dir);
-        btnA.classList.add("hidden");
-        btnB.classList.add("hidden");
-        btnSecret.classList.remove("hidden");
-      } else if (mode === "branchB") {
-        renderText(branchB[0], dir);
-        btnA.classList.add("hidden");
-        btnB.classList.add("hidden");
+        // скрыть всё лишнее
         btnSecret.classList.add("hidden");
+        btnContinue.classList.add("hidden");
+        questionBlock.classList.add("hidden");
+        inputBlock.classList.add("hidden");
+      }
+
+      if (mode === "branchA") {
+        renderText(branchA[0], dir);
+        btnSecret.classList.remove("hidden");     // показываем «Секрет»
+        btnContinue.classList.add("hidden");      // пока не видно
+        finalOptions.classList.add("hidden");
+        questionBlock.classList.add("hidden");
+        inputBlock.classList.add("hidden");
+        btnNext.classList.add("hidden");
+      }
+
+      if (mode === "branchB") {
+        renderText(branchB[0], dir);
+        btnSecret.classList.add("hidden");        // без секрета
+        btnContinue.classList.remove("hidden");   // сразу «Далее» к вопросу
+        finalOptions.classList.add("hidden");
+        questionBlock.classList.add("hidden");
+        inputBlock.classList.add("hidden");
+        btnNext.classList.add("hidden");
+      }
+
+      if (mode === "secret") {
+        renderText(secretPoem, dir);
+        btnSecret.classList.add("hidden");
+        btnContinue.classList.remove("hidden");   // после секрета — «Далее» к вопросу
+        questionBlock.classList.add("hidden");
+        inputBlock.classList.add("hidden");
+        finalOptions.classList.add("hidden");
+        btnNext.classList.add("hidden");
+      }
+
+      if (mode === "question") {
+        // выводится в showQuestion()
+      }
+
+      if (mode === "input") {
+        // показываем поле ввода
+        renderText("Напиши мне здесь своё сообщение 💬", "up");
+        questionBlock.classList.add("hidden");
+        inputBlock.classList.remove("hidden");
+        btnNext.classList.add("hidden");
+        btnSecret.classList.add("hidden");
+        btnContinue.classList.add("hidden");
+        finalOptions.classList.add("hidden");
+        txtMsg.focus();
       }
     }
 
     // === Настройки для отправки ===
-    const BOT_TOKEN = "8353271744:AAH-yziWh7Qr2W83wwoNmRjjjMpv4WN3m3M"; 
-    const ADMIN_ID = "570141917";
+    const BOT_TOKEN = "ТВОЙ_ТОКЕН_ОТ_BOTFATHER"; // вставь сюда свой токен
+    const ADMIN_ID  = "ТВОЙ_USER_ID";            // например 123456789
 
-    function sendAnswer(answer) {
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${ADMIN_ID}&text=${encodeURIComponent("Ответ: " + answer)}`)
-        .then(r => showNotify())
+    function sendAnswer(text) {
+      if (!BOT_TOKEN || !ADMIN_ID) return;
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${ADMIN_ID}&text=${encodeURIComponent(text)}`)
+        .then(() => showNotify())
         .catch(e => console.error("Ошибка отправки:", e));
     }
 
-    // === Логика кнопок ===
-    btnNext.addEventListener("click", () => { index++; update("up"); });
+    // ==== Обработчики ====
+    // Линейная кнопка «Далее»
+    btnNext.addEventListener("click", () => {
+      index++;
+      if (index >= slides.length) index = slides.length - 1;
+      update("up");
+    });
 
+    // Выбор согласия / несогласия
     btnA.addEventListener("click", () => {
+      lastMainChoice = "Согласна ❤️";
+      sendAnswer(`Выбор: ${lastMainChoice}`);
       mode = "branchA";
       update("up");
-      sendAnswer("Согласна ❤️");
     });
 
     btnB.addEventListener("click", () => {
+      lastMainChoice = "Не согласна 😠";
+      sendAnswer(`Выбор: ${lastMainChoice}`);
       mode = "branchB";
       update("up");
-      sendAnswer("Не согласна 😠");
     });
 
+    // «Секрет» в ветке A
     btnSecret.addEventListener("click", () => {
-      renderText(secretPoem, "up");
+      mode = "secret";
+      update("up");
+    });
+
+    // «Далее» после секрета (A) или после ветки B
+    btnContinue.addEventListener("click", () => {
+      showQuestion();
+    });
+
+    // Ответы на вопрос
+    btnYes.addEventListener("click", () => {
+      mode = "input";
+      update("up");
+    });
+
+    btnNo.addEventListener("click", () => {
+      renderText("Хорошо.", "up");
+      sendAnswer(`Последующий ответ (${lastMainChoice}): Нет`);
+      // скрыть всё
+      questionBlock.classList.add("hidden");
+      inputBlock.classList.add("hidden");
+      btnContinue.classList.add("hidden");
       btnSecret.classList.add("hidden");
+    });
+
+    btnInPerson.addEventListener("click", () => {
+      renderText("Жду тебя.", "up");
+      sendAnswer(`Последующий ответ (${lastMainChoice}): Скажу лично`);
+      questionBlock.classList.add("hidden");
+      inputBlock.classList.add("hidden");
+      btnContinue.classList.add("hidden");
+      btnSecret.classList.add("hidden");
+    });
+
+    // Отправка произвольного сообщения
+    btnSendMsg.addEventListener("click", () => {
+      const text = (txtMsg.value || "").trim();
+      if (!text) {
+        renderText("Напиши хоть пару слов 💌", "down");
+        return;
+      }
+      sendAnswer(`Сообщение (${lastMainChoice}): ${text}`);
+      txtMsg.value = "";
+      renderText("Спасибо, я получил твоё сообщение 💌", "up");
+      inputBlock.classList.add("hidden");
     });
 
     // Старт
     elText.textContent = slides[0];
     elText.classList.add("show");
+    mode = "linear";
+    update("up");
   </script>
 </body>
 </html>
