@@ -56,19 +56,21 @@
       box-sizing: border-box;
     }
 
-    /* Карточка растягивается динамически под контент */
     .card {
-      width: min(380px, 92vw);
+      width: 100%;
+      max-width: 360px;      /* ограничивает максимальную ширину */
+      box-sizing: border-box;
+      margin: 0 auto;
       background: rgba(20,22,30,0.65);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.15);
-      border-radius: var(--radius);
-      padding: 22px 22px 18px;
+      border-radius: 16px;
+      padding: 24px 18px;    /* меньше боковых отступов */
       box-shadow: 0 8px 24px rgba(0,0,0,0.35);
       text-align: center;
       display: flex;
       flex-direction: column;
-      gap: 14px;                 /* расстояние между текстом и кнопками */
+      gap: 14px;
       animation: fadeInUp .7s ease both;
     }
     @keyframes fadeInUp {
@@ -361,3 +363,4 @@
   </script>
 </body>
 </html>
+
