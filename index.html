@@ -6,61 +6,61 @@
   <title>Открытки</title>
   <style>
     :root { --card-bg: rgba(255,255,255,.75); --shadow: 0 8px 24px rgba(0,0,0,.1); }
-    html, body { height:100%; }
-    body{
-      margin:0; font-family:"Segoe UI","Helvetica Neue",sans-serif; color:#333;
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: "Segoe UI","Helvetica Neue",sans-serif; color:#333;
       display:flex; align-items:center; justify-content:center;
       background:#f7f5f2 center/cover no-repeat fixed;
-      transition:background-image .4s ease;
+      transition: background-image .4s ease;
     }
-    body.bg-menu{ background-image:url("background-menu.jpg"); }
-    body.bg-a{ background-image:url("background-a.jpg"); }
-    body.bg-b{ background-image:url("background-b.jpg"); }
+    body.bg-menu { background-image:url("background-menu.jpg"); }
+    body.bg-a    { background-image:url("background-a.jpg"); }
+    body.bg-b    { background-image:url("background-b.jpg"); }
 
-    .wrap{ width:100%; padding:20px; display:flex; justify-content:center; align-items:center; }
-    .card{
+    .wrap { width:100%; padding:20px; display:flex; justify-content:center; align-items:center; }
+    .card {
       background:var(--card-bg); backdrop-filter:blur(8px);
       border-radius:24px; box-shadow:var(--shadow);
       padding:36px 28px; max-width:560px; width:100%; text-align:center;
     }
 
-    .title{ margin:0 0 14px; font-size:1.1rem; font-weight:600; color:#555; }
-    .text{
+    .text {
       font-size:1.25rem; line-height:1.6; min-height:3.2em;
       opacity:0; transform:translateY(10px);
       transition:opacity .5s ease, transform .5s ease;
     }
-    .text.show{ opacity:1; transform:translateY(0); }
+    .text.show { opacity:1; transform:translateY(0); }
 
-    .controls{ margin-top:26px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-    button{
+    .controls { margin-top:26px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    button {
       background:#f0d9b5; border:none; border-radius:12px; padding:10px 20px; font-size:1rem;
       cursor:pointer; transition:background .3s ease, transform .2s ease;
     }
-    button:hover{ background:#f7e5c4; transform:translateY(-2px); }
-    .hidden{ display:none !important; }
+    button:hover { background:#f7e5c4; transform:translateY(-2px); }
+    .hidden { display:none !important; }
 
-    .menu-grid{ display:grid; grid-template-columns:1fr; gap:14px; margin-top:10px; }
-    .menu-btn{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:14px 18px; font-weight:600; }
+    /* меню: только две кнопки */
+    .menu-grid { display:grid; grid-template-columns:1fr; gap:14px; }
+    .menu-btn  { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:14px 18px; font-weight:600; }
 
-    .sunrise{ animation:fadeInUp 1.1s ease forwards; }
-    @keyframes fadeInUp{ from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
+    .sunrise { animation: fadeInUp 1.1s ease forwards; }
+    @keyframes fadeInUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
   </style>
 </head>
 <body class="bg-menu">
   <div class="wrap">
     <div class="card">
-      <p id="title" class="title">Привет, Солнце ☀️</p>
-      <p id="text" class="text"></p>
-
-      <!-- Меню -->
+      <!-- МЕНЮ: только выбор открыток -->
       <div id="menu" class="menu-grid">
         <button id="openA" class="menu-btn">28.10.2025</button>
         <button id="openB" class="menu-btn" style="opacity:.9">Скоро…</button>
       </div>
 
-      <!-- Навигация -->
-      <div id="nav" class="controls hidden" style="display:none">
+      <!-- ТЕКСТ СЛАЙДОВ -->
+      <p id="text" class="text hidden"></p>
+
+      <!-- НАВИГАЦИЯ -->
+      <div id="nav" class="controls hidden">
         <button id="prev">← Назад</button>
         <button id="next">Далее →</button>
       </div>
@@ -68,7 +68,7 @@
   </div>
 
   <script>
-    const elTitle = document.getElementById("title");
+    // режим: "menu" | "cardA" | "cardB"
     const elText  = document.getElementById("text");
     const menu    = document.getElementById("menu");
     const nav     = document.getElementById("nav");
@@ -103,14 +103,14 @@
 
     function applyBackground(v){
       document.body.className="";
-      if(v==="menu")document.body.classList.add("bg-menu");
-      if(v==="cardA")document.body.classList.add("bg-a");
-      if(v==="cardB")document.body.classList.add("bg-b");
+      if(v==="menu") document.body.classList.add("bg-menu");
+      if(v==="cardA") document.body.classList.add("bg-a");
+      if(v==="cardB") document.body.classList.add("bg-b");
     }
 
     function notifySelection(choice){
       try{
-        fetch("/api/notify",{
+        fetch("https://your-subdomain.workers.dev/api/notify",{
           method:"POST",
           headers:{ "Content-Type":"application/json" },
           body:JSON.stringify({ choice, time:new Date().toISOString() })
@@ -122,23 +122,18 @@
       view = newView;
       applyBackground(view);
 
-      if(view==="menu"){
-        elTitle.textContent = "Привет, Солнце ☀️";
-        elTitle.classList.remove("hidden");
-        elText.textContent = "";
-        elText.classList.remove("show","sunrise");
+      if(view === "menu"){
+        // показать только меню
         menu.classList.remove("hidden");
-        menu.style.display = "";
+        elText.classList.add("hidden");
         nav.classList.add("hidden");
-        nav.style.display = "none";
         return;
       }
 
-      elTitle.classList.add("hidden");
+      // режим открытки: скрыть меню, показать текст и навигацию
       menu.classList.add("hidden");
-      menu.style.display = "none";
+      elText.classList.remove("hidden");
       nav.classList.remove("hidden");
-      nav.style.display = "";
       index = 0;
       renderSlide();
     }
@@ -153,9 +148,10 @@
       elText.textContent = t;
       if(index===0) elText.classList.add("sunrise");
       elText.classList.add("show");
-      btnNext.classList.toggle("hidden", index>=slides.length-1);
+      btnNext.classList.toggle("hidden", index >= slides.length - 1);
     }
 
+    // выбор в меню
     function openCard(which){
       notifySelection(which==="cardA" ? "28.10.2025" : "Скоро");
       setView(which);
@@ -163,18 +159,21 @@
     btnOpenA.addEventListener("click", ()=>openCard("cardA"));
     btnOpenB.addEventListener("click", ()=>openCard("cardB"));
 
+    // навигация
     btnNext.addEventListener("click", ()=>{
       const slides = getSlides();
-      if(index < slides.length-1){ index++; renderSlide(); }
+      if(index < slides.length - 1){ index++; renderSlide(); }
     });
     btnPrev.addEventListener("click", ()=>{
       if(view!=="menu" && index===0){
+        // возврат в меню
         setView("menu");
-      }else if(view!=="menu" && index>0){
+      } else if (view!=="menu" && index>0){
         index--; renderSlide();
       }
     });
 
+    // клавиатура
     window.addEventListener("keydown",(e)=>{
       const tag = document.activeElement?.tagName?.toLowerCase();
       if(tag==="input"||tag==="textarea") return;
@@ -189,6 +188,7 @@
       }
     });
 
+    // старт
     setView("menu");
   </script>
 </body>
