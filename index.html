@@ -16,6 +16,7 @@
     body.bg-menu { background-image:url("background-menu.jpg"); }
     body.bg-a    { background-image:url("background-a.jpg"); }
     body.bg-b    { background-image:url("background-b.jpg"); }
+    body.bg-c    { background-image:url("background-c.jpg"); }
 
     .wrap { width:100%; padding:20px; display:flex; justify-content:center; align-items:center; }
     .card {
@@ -39,7 +40,6 @@
     button:hover { background:#f7e5c4; transform:translateY(-2px); }
     .hidden { display:none !important; }
 
-    /* меню: только две кнопки */
     .menu-grid { display:grid; grid-template-columns:1fr; gap:14px; }
     .menu-btn  { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:14px 18px; font-weight:600; }
 
@@ -50,13 +50,15 @@
 <body class="bg-menu">
   <div class="wrap">
     <div class="card">
-      <!-- МЕНЮ: только выбор открыток -->
+
+      <!-- МЕНЮ -->
       <div id="menu" class="menu-grid">
         <button id="openA" class="menu-btn">28.10.2025</button>
-        <button id="openB" class="menu-btn" style="opacity:.9">Скоро…</button>
+        <button id="openB" class="menu-btn">29.10.2025</button>
+        <button id="openC" class="menu-btn" style="opacity:.9">Скоро…</button>
       </div>
 
-      <!-- ТЕКСТ СЛАЙДОВ -->
+      <!-- ТЕКСТ -->
       <p id="text" class="text hidden"></p>
 
       <!-- НАВИГАЦИЯ -->
@@ -68,18 +70,19 @@
   </div>
 
   <script>
-    // режим: "menu" | "cardA" | "cardB"
     const elText  = document.getElementById("text");
     const menu    = document.getElementById("menu");
     const nav     = document.getElementById("nav");
     const btnOpenA = document.getElementById("openA");
     const btnOpenB = document.getElementById("openB");
+    const btnOpenC = document.getElementById("openC");
     const btnPrev  = document.getElementById("prev");
     const btnNext  = document.getElementById("next");
 
     let view = "menu";
     let index = 0;
 
+    // === 28.10.2025 ===
     const slidesA = [
       "Привет, Солнце ☀️",
       "Знаешь, иногда жизнь просто требует немного тишины.",
@@ -99,13 +102,24 @@
       "И этого уже достаточно.",
       "Я тебя подожду."
     ];
-    const slidesB = ["Подожди немного, скоро тут кое-что будет"];
+
+    // === 29.10.2025 ===
+    const slidesB = [
+      "Пусть всё рушится вокруг,<br>Пусть шумит и бьёт метелью —<br>Сохрани в душе свой круг,<br>Тихий свет под звон капели.",
+      "Мир качнётся — не упасть,<br>Всё пройдёт, и боль растает.<br>Надо верить, надо встать,<br>Даже если сердце тает.",
+      "Всё вернётся, всё пройдёт,<br>Шум ослабнет, станет легче.<br>Каждый шторм нас приведёт<br>К новым дням, к мечте, к рассвету.",
+      "И когда утихнет шум,<br>Свет пробьётся сквозь мгновенье.<br>Просто помни: сквозь весь шум<br>Жив в тебе огонь стремленья."
+    ];
+
+    // === Скоро ===
+    const slidesC = ["Подожди немного, скоро тут кое-что будет"];
 
     function applyBackground(v){
       document.body.className="";
       if(v==="menu") document.body.classList.add("bg-menu");
       if(v==="cardA") document.body.classList.add("bg-a");
       if(v==="cardB") document.body.classList.add("bg-b");
+      if(v==="cardC") document.body.classList.add("bg-c");
     }
 
     function notifySelection(choice){
@@ -123,14 +137,12 @@
       applyBackground(view);
 
       if(view === "menu"){
-        // показать только меню
         menu.classList.remove("hidden");
         elText.classList.add("hidden");
         nav.classList.add("hidden");
         return;
       }
 
-      // режим открытки: скрыть меню, показать текст и навигацию
       menu.classList.add("hidden");
       elText.classList.remove("hidden");
       nav.classList.remove("hidden");
@@ -138,42 +150,48 @@
       renderSlide();
     }
 
-    function getSlides(){ return view==="cardA" ? slidesA : slidesB; }
+    function getSlides(){
+      if(view==="cardA") return slidesA;
+      if(view==="cardB") return slidesB;
+      return slidesC;
+    }
 
     function renderSlide(){
       const slides = getSlides();
       const t = slides[index] || "";
       elText.classList.remove("show","sunrise");
       void elText.offsetWidth;
-      elText.textContent = t;
+      elText.innerHTML = t;
       if(index===0) elText.classList.add("sunrise");
       elText.classList.add("show");
       btnNext.classList.toggle("hidden", index >= slides.length - 1);
     }
 
-    // выбор в меню
     function openCard(which){
-      notifySelection(which==="cardA" ? "28.10.2025" : "Скоро");
+      const name =
+        which==="cardA" ? "28.10.2025" :
+        which==="cardB" ? "29.10.2025" : "Скоро";
+      notifySelection(name);
       setView(which);
     }
+
     btnOpenA.addEventListener("click", ()=>openCard("cardA"));
     btnOpenB.addEventListener("click", ()=>openCard("cardB"));
+    btnOpenC.addEventListener("click", ()=>openCard("cardC"));
 
-    // навигация
     btnNext.addEventListener("click", ()=>{
       const slides = getSlides();
       if(index < slides.length - 1){ index++; renderSlide(); }
     });
+
     btnPrev.addEventListener("click", ()=>{
       if(view!=="menu" && index===0){
-        // возврат в меню
         setView("menu");
       } else if (view!=="menu" && index>0){
         index--; renderSlide();
       }
     });
 
-    // клавиатура
     window.addEventListener("keydown",(e)=>{
       const tag = document.activeElement?.tagName?.toLowerCase();
       if(tag==="input"||tag==="textarea") return;
@@ -188,9 +206,7 @@
       }
     });
 
-    // старт
     setView("menu");
   </script>
 </body>
 </html>
-
