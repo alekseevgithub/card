@@ -2,110 +2,85 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Открытка — Привет, Солнце ☀️</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Открытки</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
-      background: url("background.jpg") center center / cover no-repeat fixed;
-      color: #333;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    :root { --card-bg: rgba(255,255,255,.75); --shadow: 0 8px 24px rgba(0,0,0,.1); }
+    html, body { height:100%; }
+    body{
+      margin:0; font-family:"Segoe UI","Helvetica Neue",sans-serif; color:#333;
+      display:flex; align-items:center; justify-content:center;
+      background:#f7f5f2 center/cover no-repeat fixed;
+      transition:background-image .4s ease;
+    }
+    body.bg-menu{ background-image:url("background-menu.jpg"); }
+    body.bg-a{ background-image:url("background-a.jpg"); }
+    body.bg-b{ background-image:url("background-b.jpg"); }
+
+    .wrap{ width:100%; padding:20px; display:flex; justify-content:center; align-items:center; }
+    .card{
+      background:var(--card-bg); backdrop-filter:blur(8px);
+      border-radius:24px; box-shadow:var(--shadow);
+      padding:36px 28px; max-width:560px; width:100%; text-align:center;
     }
 
-    .wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      padding: 20px;
+    .title{ margin:0 0 14px; font-size:1.1rem; font-weight:600; color:#555; }
+    .text{
+      font-size:1.25rem; line-height:1.6; min-height:3.2em;
+      opacity:0; transform:translateY(10px);
+      transition:opacity .5s ease, transform .5s ease;
     }
+    .text.show{ opacity:1; transform:translateY(0); }
 
-    .card {
-      background: rgba(255, 255, 255, 0.75);
-      backdrop-filter: blur(8px);
-      border-radius: 24px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-      padding: 40px 30px;
-      max-width: 500px;
-      text-align: center;
-      transition: all 0.4s ease;
+    .controls{ margin-top:26px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    button{
+      background:#f0d9b5; border:none; border-radius:12px; padding:10px 20px; font-size:1rem;
+      cursor:pointer; transition:background .3s ease, transform .2s ease;
     }
+    button:hover{ background:#f7e5c4; transform:translateY(-2px); }
+    .hidden{ display:none !important; }
 
-    .text {
-      font-size: 1.25rem;
-      line-height: 1.6;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
+    .menu-grid{ display:grid; grid-template-columns:1fr; gap:14px; margin-top:10px; }
+    .menu-btn{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:14px 18px; font-weight:600; }
 
-    .text.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .controls {
-      margin-top: 30px;
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    button {
-      background: #f0d9b5;
-      border: none;
-      border-radius: 12px;
-      padding: 10px 20px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.3s ease, transform 0.2s ease;
-    }
-
-    button:hover {
-      background: #f7e5c4;
-      transform: translateY(-2px);
-    }
-
-    button.hidden {
-      display: none;
-    }
-
-    /* Анимация приветствия */
-    .sunrise {
-      animation: fadeInUp 1.8s ease forwards;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(15px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+    .sunrise{ animation:fadeInUp 1.1s ease forwards; }
+    @keyframes fadeInUp{ from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
   </style>
 </head>
-<body>
+<body class="bg-menu">
   <div class="wrap">
     <div class="card">
+      <p id="title" class="title">Привет, Солнце ☀️</p>
       <p id="text" class="text"></p>
-      <div class="controls">
-        <button id="prev" class="hidden">← Назад</button>
+
+      <!-- Меню -->
+      <div id="menu" class="menu-grid">
+        <button id="openA" class="menu-btn">28.10.2025</button>
+        <button id="openB" class="menu-btn" style="opacity:.9">Скоро…</button>
+      </div>
+
+      <!-- Навигация -->
+      <div id="nav" class="controls hidden" style="display:none">
+        <button id="prev">← Назад</button>
         <button id="next">Далее →</button>
       </div>
     </div>
   </div>
 
   <script>
-    // === Контент открытки ===
-    const slides = [
+    const elTitle = document.getElementById("title");
+    const elText  = document.getElementById("text");
+    const menu    = document.getElementById("menu");
+    const nav     = document.getElementById("nav");
+    const btnOpenA = document.getElementById("openA");
+    const btnOpenB = document.getElementById("openB");
+    const btnPrev  = document.getElementById("prev");
+    const btnNext  = document.getElementById("next");
+
+    let view = "menu";
+    let index = 0;
+
+    const slidesA = [
       "Привет, Солнце ☀️",
       "Знаешь, иногда жизнь просто требует немного тишины.",
       "Не решений, не объяснений, не борьбы — просто паузы.",
@@ -117,56 +92,104 @@
       "Пусть этот момент будет только твоим. Мир всё равно подождёт.",
       "В тебе уже есть всё, что нужно, чтобы справиться.",
       "Даже если ты этого не чувствуешь — сила, спокойствие, свет.",
-      "Они просто прячутся, чтобы ты могла отдохнуть.",
-      "И когда почувствуешь, что готова — просто сделай маленький шаг вперёд.",
+      "Они просто прячутся, чтобы ты мог отдохнуть.",
+      "И когда почувствуешь, что готов — просто сделай маленький шаг вперёд.",
       "Без давления, без ожиданий.",
       "Потому что иногда достаточно просто быть.",
       "И этого уже достаточно.",
-      "Я тебя подожду."
+      "Я тебя жду."
     ];
+    const slidesB = ["Подожди немного, скоро тут кое-что будет"];
 
-    const elText = document.getElementById("text");
-    const btnPrev = document.getElementById("prev");
-    const btnNext = document.getElementById("next");
+    function applyBackground(v){
+      document.body.className="";
+      if(v==="menu")document.body.classList.add("bg-menu");
+      if(v==="cardA")document.body.classList.add("bg-a");
+      if(v==="cardB")document.body.classList.add("bg-b");
+    }
 
-    let index = 0;
+    function notifySelection(choice){
+      try{
+        fetch("/api/notify",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body:JSON.stringify({ choice, time:new Date().toISOString() })
+        }).catch(()=>{});
+      }catch{}
+    }
 
-    function renderText(t) {
-      elText.classList.remove("show", "sunrise");
+    function setView(newView){
+      view = newView;
+      applyBackground(view);
+
+      if(view==="menu"){
+        elTitle.textContent = "Привет, Солнце ☀️";
+        elTitle.classList.remove("hidden");
+        elText.textContent = "";
+        elText.classList.remove("show","sunrise");
+        menu.classList.remove("hidden");
+        menu.style.display = "";
+        nav.classList.add("hidden");
+        nav.style.display = "none";
+        return;
+      }
+
+      elTitle.classList.add("hidden");
+      menu.classList.add("hidden");
+      menu.style.display = "none";
+      nav.classList.remove("hidden");
+      nav.style.display = "";
+      index = 0;
+      renderSlide();
+    }
+
+    function getSlides(){ return view==="cardA" ? slidesA : slidesB; }
+
+    function renderSlide(){
+      const slides = getSlides();
+      const t = slides[index] || "";
+      elText.classList.remove("show","sunrise");
       void elText.offsetWidth;
       elText.textContent = t;
-      if (index === 0) elText.classList.add("sunrise");
+      if(index===0) elText.classList.add("sunrise");
       elText.classList.add("show");
+      btnNext.classList.toggle("hidden", index>=slides.length-1);
     }
 
-    function update() {
-      renderText(slides[index]);
-      btnPrev.classList.toggle("hidden", index === 0);
-      btnNext.classList.toggle("hidden", index === slides.length - 1);
+    function openCard(which){
+      notifySelection(which==="cardA" ? "28.10.2025" : "Скоро");
+      setView(which);
     }
+    btnOpenA.addEventListener("click", ()=>openCard("cardA"));
+    btnOpenB.addEventListener("click", ()=>openCard("cardB"));
 
-    btnNext.addEventListener("click", () => {
-      if (index < slides.length - 1) index++;
-      update();
+    btnNext.addEventListener("click", ()=>{
+      const slides = getSlides();
+      if(index < slides.length-1){ index++; renderSlide(); }
     });
-
-    btnPrev.addEventListener("click", () => {
-      if (index > 0) index--;
-      update();
-    });
-
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        if (!btnNext.classList.contains("hidden")) btnNext.click();
-      } else if (e.key === "ArrowLeft") {
-        if (!btnPrev.classList.contains("hidden")) btnPrev.click();
+    btnPrev.addEventListener("click", ()=>{
+      if(view!=="menu" && index===0){
+        setView("menu");
+      }else if(view!=="menu" && index>0){
+        index--; renderSlide();
       }
     });
 
-    update();
+    window.addEventListener("keydown",(e)=>{
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if(tag==="input"||tag==="textarea") return;
+      if(view==="menu"){
+        if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openCard("cardA"); }
+        return;
+      }
+      if(e.key==="ArrowLeft") btnPrev.click();
+      if(e.key==="Enter"||e.key===" "){
+        e.preventDefault();
+        if(!btnNext.classList.contains("hidden")) btnNext.click();
+      }
+    });
+
+    setView("menu");
   </script>
 </body>
 </html>
-
-
