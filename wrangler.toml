@@ -1,9 +1,0 @@
-name = "cards-notify"
-main = "worker/worker.js"
-compatibility_date = "2024-01-01"
-
-# Используем workers.dev (без маршрутов на домене)
-# Секреты TG_BOT_TOKEN и TG_CHAT_ID зададим через wrangler/CI
-
-[vars]
-# сюда НЕ кладём секреты
