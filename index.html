@@ -124,7 +124,7 @@
 
     function notifySelection(choice){
       try{
-        fetch("https://your-subdomain.workers.dev/api/notify",{
+        fetch("https://fragrant-brook-cbe0.n-alekseev-work.workers.dev/api/notify",{
           method:"POST",
           headers:{ "Content-Type":"application/json" },
           body:JSON.stringify({ choice, time:new Date().toISOString() })
@@ -210,3 +210,4 @@
   </script>
 </body>
 </html>
+
