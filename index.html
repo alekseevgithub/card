@@ -14,9 +14,10 @@
       transition: background-image .4s ease;
     }
     body.bg-menu { background-image:url("background-menu.jpg"); }
-    body.bg-a    { background-image:url("background-a.jpg"); }
-    body.bg-b    { background-image:url("background-b.jpg"); }
-    body.bg-c    { background-image:url("background-c.jpg"); }
+    body.bg-a    { background-image:url("background-a.jpg"); } /* 28.10.2025 */
+    body.bg-b    { background-image:url("background-b.jpg"); } /* 29.10.2025 */
+    body.bg-c    { background-image:url("background-c.jpg"); } /* 30.10.2025 */
+    body.bg-d    { background-image:url("background-d.jpg"); } /* Скоро… */
 
     .wrap { width:100%; padding:20px; display:flex; justify-content:center; align-items:center; }
     .card {
@@ -45,6 +46,10 @@
 
     .sunrise { animation: fadeInUp 1.1s ease forwards; }
     @keyframes fadeInUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+    /* мелочь для плеера */
+    audio { width: 100%; margin-top: 12px; }
+    .subtitle { margin: 6px 0 0; font-size: .95rem; opacity: .8; }
   </style>
 </head>
 <body class="bg-menu">
@@ -55,7 +60,8 @@
       <div id="menu" class="menu-grid">
         <button id="openA" class="menu-btn">28.10.2025</button>
         <button id="openB" class="menu-btn">29.10.2025</button>
-        <button id="openC" class="menu-btn" style="opacity:.9">Скоро…</button>
+        <button id="openC" class="menu-btn">30.10.2025</button>
+        <button id="openD" class="menu-btn" style="opacity:.9">Скоро…</button>
       </div>
 
       <!-- ТЕКСТ -->
@@ -76,6 +82,7 @@
     const btnOpenA = document.getElementById("openA");
     const btnOpenB = document.getElementById("openB");
     const btnOpenC = document.getElementById("openC");
+    const btnOpenD = document.getElementById("openD");
     const btnPrev  = document.getElementById("prev");
     const btnNext  = document.getElementById("next");
 
@@ -103,7 +110,7 @@
       "Я тебя подожду."
     ];
 
-    // === 29.10.2025 ===
+    // === 29.10.2025 (стих) ===
     const slidesB = [
       "Пусть всё рушится вокруг,<br>Пусть шумит и бьёт метелью —<br>Сохрани в душе свой круг,<br>Тихий свет под звон капели.",
       "Мир качнётся — не упасть,<br>Всё пройдёт, и боль растает.<br>Надо верить, надо встать,<br>Даже если сердце тает.",
@@ -111,8 +118,23 @@
       "И когда утихнет шум,<br>Свет пробьётся сквозь мгновенье.<br>Просто помни: сквозь весь шум<br>Жив в тебе огонь стремленья."
     ];
 
-    // === Скоро ===
-    const slidesC = ["Подожди немного, скоро тут кое-что будет"];
+    // === 30.10.2025 (песня) ===
+    // один слайд с нативным аудио-плеером; добавь файлы song-30102025.mp3/.ogg рядом
+    const slidesC = [
+      `
+      <div>
+        <div>Вспомни и почувствуй🎵</div>
+        <audio controls preload="none">
+          <source src="song-30102025.mp3" type="audio/mpeg">
+          <source src="song-30102025.ogg" type="audio/ogg">
+          Ваш браузер не поддерживает аудио-плеер.
+        </audio>
+      </div>
+      `
+    ];
+
+    // === Скоро… ===
+    const slidesD = ["Подожди немного, скоро тут кое-что будет"];
 
     function applyBackground(v){
       document.body.className="";
@@ -120,8 +142,10 @@
       if(v==="cardA") document.body.classList.add("bg-a");
       if(v==="cardB") document.body.classList.add("bg-b");
       if(v==="cardC") document.body.classList.add("bg-c");
+      if(v==="cardD") document.body.classList.add("bg-d");
     }
 
+    // (уведомления можно оставить/убрать — сейчас оставлено как было)
     function notifySelection(choice){
       try{
         fetch("https://fragrant-brook-cbe0.n-alekseev-work.workers.dev/api/notify",{
@@ -132,7 +156,16 @@
       }catch{}
     }
 
+    function pauseAllAudio(){
+      document.querySelectorAll("audio").forEach(a => {
+        try { a.pause(); a.currentTime = 0; } catch {}
+      });
+    }
+
     function setView(newView){
+      // при смене вида останавливаем возможное воспроизведение
+      pauseAllAudio();
+
       view = newView;
       applyBackground(view);
 
@@ -153,10 +186,13 @@
     function getSlides(){
       if(view==="cardA") return slidesA;
       if(view==="cardB") return slidesB;
-      return slidesC;
+      if(view==="cardC") return slidesC;
+      return slidesD;
     }
 
     function renderSlide(){
+      pauseAllAudio();
+
       const slides = getSlides();
       const t = slides[index] || "";
       elText.classList.remove("show","sunrise");
@@ -170,7 +206,8 @@
     function openCard(which){
       const name =
         which==="cardA" ? "28.10.2025" :
-        which==="cardB" ? "29.10.2025" : "Скоро";
+        which==="cardB" ? "29.10.2025" :
+        which==="cardC" ? "30.10.2025" : "Скоро";
       notifySelection(name);
       setView(which);
     }
@@ -178,6 +215,7 @@
     btnOpenA.addEventListener("click", ()=>openCard("cardA"));
     btnOpenB.addEventListener("click", ()=>openCard("cardB"));
     btnOpenC.addEventListener("click", ()=>openCard("cardC"));
+    btnOpenD.addEventListener("click", ()=>openCard("cardD"));
 
     btnNext.addEventListener("click", ()=>{
       const slides = getSlides();
@@ -210,4 +248,3 @@
   </script>
 </body>
 </html>
-
