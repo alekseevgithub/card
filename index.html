@@ -17,7 +17,8 @@
     body.bg-a    { background-image:url("background-a.jpg"); } /* 28.10.2025 */
     body.bg-b    { background-image:url("background-b.jpg"); } /* 29.10.2025 */
     body.bg-c    { background-image:url("background-c.jpg"); } /* 30.10.2025 */
-    body.bg-d    { background-image:url("background-d.jpg"); } /* Скоро… */
+    body.bg-d    { background-image:url("background-dlya-tebya.jpg"); } /* Для тебя */
+    body.bg-e    { background-image:url("background-d.jpg"); } /* Скоро… */
 
     .wrap { width:100%; padding:20px; display:flex; justify-content:center; align-items:center; }
     .card {
@@ -50,6 +51,20 @@
     /* мелочь для плеера */
     audio { width: 100%; margin-top: 12px; }
     .subtitle { margin: 6px 0 0; font-size: .95rem; opacity: .8; }
+
+    /* эффект построчного появления для открытки "Для тебя" */
+    .poem { display:inline-block; text-align:center; }
+    .poem .line {
+      display:block;
+      opacity:0;
+      transform:translateY(6px);
+      animation:lineIn .55s ease forwards;
+      animation-delay:var(--d, 0s);
+    }
+    @keyframes lineIn {
+      from { opacity:0; transform:translateY(6px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
   </style>
 </head>
 <body class="bg-menu">
@@ -61,7 +76,8 @@
         <button id="openA" class="menu-btn">28.10.2025</button>
         <button id="openB" class="menu-btn">29.10.2025</button>
         <button id="openC" class="menu-btn">30.10.2025</button>
-        <button id="openD" class="menu-btn" style="opacity:.9">Скоро…</button>
+        <button id="openD" class="menu-btn">Для тебя</button>
+        <button id="openE" class="menu-btn" style="opacity:.9">Скоро…</button>
       </div>
 
       <!-- ТЕКСТ -->
@@ -83,6 +99,7 @@
     const btnOpenB = document.getElementById("openB");
     const btnOpenC = document.getElementById("openC");
     const btnOpenD = document.getElementById("openD");
+    const btnOpenE = document.getElementById("openE");
     const btnPrev  = document.getElementById("prev");
     const btnNext  = document.getElementById("next");
 
@@ -119,7 +136,6 @@
     ];
 
     // === 30.10.2025 (песня) ===
-    // один слайд с нативным аудио-плеером; добавь файлы song-30102025.mp3/.ogg рядом
     const slidesC = [
       `
       <div>
@@ -133,8 +149,18 @@
       `
     ];
 
+    // === Для тебя (новая открытка) ===
+    const slidesD = [
+      "Каждая страница — новое четверостишие. Это стихи, которые мне нравятся, потому что, читая их, я думаю о тебе.",
+      "Там будут звёздные огни<br>И ровная<br>Дорога<br>Тебя жду счастливые дни.<br>Потерпи<br>Немного.",
+      "Если ты устанешь сражаться,<br>То ненадолго<br>Приляг,<br>Но, сука, не смей сдаваться,<br>До победы<br>Один шаг.",
+      "Может быть, это судьба.<br>Я стал<br>Робеть.<br>Моё сердце при виде тебя<br>Говорить:<br>«Охуеть!»",
+      "Я всё лежал<br>И думал о тебе,<br>А ты так громко<br>Мне в плечо дышала,<br>Я самым был<br>Счастливым на земле,<br>А ты спала<br>И ничего не знала.",
+      "Тут будут периодически появляться новые стихи,<br>в меню поставлю дату, чтоб ты понимала."
+    ];
+
     // === Скоро… ===
-    const slidesD = ["Подожди немного, скоро тут кое-что будет"];
+    const slidesE = ["Подожди немного, скоро тут кое-что будет"];
 
     function applyBackground(v){
       document.body.className="";
@@ -143,9 +169,9 @@
       if(v==="cardB") document.body.classList.add("bg-b");
       if(v==="cardC") document.body.classList.add("bg-c");
       if(v==="cardD") document.body.classList.add("bg-d");
+      if(v==="cardE") document.body.classList.add("bg-e");
     }
 
-    // (уведомления можно оставить/убрать — сейчас оставлено как было)
     function notifySelection(choice){
       try{
         fetch("https://fragrant-brook-cbe0.n-alekseev-work.workers.dev/api/notify",{
@@ -163,9 +189,7 @@
     }
 
     function setView(newView){
-      // при смене вида останавливаем возможное воспроизведение
       pauseAllAudio();
-
       view = newView;
       applyBackground(view);
 
@@ -187,17 +211,36 @@
       if(view==="cardA") return slidesA;
       if(view==="cardB") return slidesB;
       if(view==="cardC") return slidesC;
-      return slidesD;
+      if(view==="cardD") return slidesD;
+      return slidesE;
     }
 
     function renderSlide(){
       pauseAllAudio();
 
       const slides = getSlides();
-      const t = slides[index] || "";
+      const raw = slides[index] || "";
+
       elText.classList.remove("show","sunrise");
       void elText.offsetWidth;
-      elText.innerHTML = t;
+
+      if(view === "cardD" && raw.includes("<br>")){
+        const lines = raw.split("<br>").map(s=>s.trim()).filter(Boolean);
+        const div = document.createElement("div");
+        div.className = "poem";
+        lines.forEach((line,i)=>{
+          const span = document.createElement("span");
+          span.className = "line";
+          span.style.setProperty("--d",`${i*0.1}s`);
+          span.innerHTML = line;
+          div.appendChild(span);
+        });
+        elText.innerHTML = "";
+        elText.appendChild(div);
+      } else {
+        elText.innerHTML = raw;
+      }
+
       if(index===0) elText.classList.add("sunrise");
       elText.classList.add("show");
       btnNext.classList.toggle("hidden", index >= slides.length - 1);
@@ -207,7 +250,8 @@
       const name =
         which==="cardA" ? "28.10.2025" :
         which==="cardB" ? "29.10.2025" :
-        which==="cardC" ? "30.10.2025" : "Скоро";
+        which==="cardC" ? "30.10.2025" :
+        which==="cardD" ? "Для тебя" : "Скоро";
       notifySelection(name);
       setView(which);
     }
@@ -216,6 +260,7 @@
     btnOpenB.addEventListener("click", ()=>openCard("cardB"));
     btnOpenC.addEventListener("click", ()=>openCard("cardC"));
     btnOpenD.addEventListener("click", ()=>openCard("cardD"));
+    btnOpenE.addEventListener("click", ()=>openCard("cardE"));
 
     btnNext.addEventListener("click", ()=>{
       const slides = getSlides();
