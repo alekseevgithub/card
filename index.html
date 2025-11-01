@@ -18,7 +18,7 @@
     body.bg-b    { background-image:url("background-b.jpg"); } /* 29.10.2025 */
     body.bg-c    { background-image:url("background-c.jpg"); } /* 30.10.2025 */
     body.bg-d    { background-image:url("background-dlya-tebya.jpg"); } /* Для тебя */
-    body.bg-e    { background-image:url("background-d.jpg"); } /* Скоро… */
+    body.bg-e    { background-image:url("background-invite.jpg"); } /* Приглашение */
 
     .wrap { width:100%; padding:20px; display:flex; justify-content:center; align-items:center; }
     .card {
@@ -48,23 +48,10 @@
     .sunrise { animation: fadeInUp 1.1s ease forwards; }
     @keyframes fadeInUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 
-    /* мелочь для плеера */
     audio { width: 100%; margin-top: 12px; }
-    .subtitle { margin: 6px 0 0; font-size: .95rem; opacity: .8; }
 
-    /* эффект построчного появления для открытки "Для тебя" */
-    .poem { display:inline-block; text-align:center; }
-    .poem .line {
-      display:block;
-      opacity:0;
-      transform:translateY(6px);
-      animation:lineIn .55s ease forwards;
-      animation-delay:var(--d, 0s);
-    }
-    @keyframes lineIn {
-      from { opacity:0; transform:translateY(6px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
+    /* выбор для Приглашения */
+    #inviteChoices { display:flex; justify-content:center; gap:16px; margin-top:20px; }
   </style>
 </head>
 <body class="bg-menu">
@@ -77,11 +64,17 @@
         <button id="openB" class="menu-btn">29.10.2025</button>
         <button id="openC" class="menu-btn">30.10.2025</button>
         <button id="openD" class="menu-btn">Для тебя</button>
-        <button id="openE" class="menu-btn" style="opacity:.9">Скоро…</button>
+        <button id="openE" class="menu-btn" style="opacity:.95">Приглашение</button>
       </div>
 
       <!-- ТЕКСТ -->
       <p id="text" class="text hidden"></p>
+
+      <!-- ВЫБОР (Приглашение) -->
+      <div id="inviteChoices" class="hidden">
+        <button id="agree">согласна</button>
+        <button id="disagree">не согласна</button>
+      </div>
 
       <!-- НАВИГАЦИЯ -->
       <div id="nav" class="controls hidden">
@@ -102,65 +95,38 @@
     const btnOpenE = document.getElementById("openE");
     const btnPrev  = document.getElementById("prev");
     const btnNext  = document.getElementById("next");
+    const inviteChoices = document.getElementById("inviteChoices");
+    const btnAgree = document.getElementById("agree");
+    const btnDisagree = document.getElementById("disagree");
 
     let view = "menu";
     let index = 0;
+    let inviteChoice = null;
 
     // === 28.10.2025 ===
-    const slidesA = [
-      "Привет, Солнце ☀️",
-      "Знаешь, иногда жизнь просто требует немного тишины.",
-      "Не решений, не объяснений, не борьбы — просто паузы.",
-      "Чтобы выдохнуть, вспомнить себя и почувствовать, что всё не так страшно, как кажется.",
-      "Не нужно спешить. Всё, что должно прийти, обязательно придёт — в своё время, своим шагом.",
-      "Даже если сейчас кажется, что ничего не движется, внутри всё равно происходит что-то важное.",
-      "Просто не всегда это видно сразу.",
-      "Позволь себе немного покоя. Пить чай без мыслей, слушать музыку, смотреть в окно.",
-      "Пусть этот момент будет только твоим. Мир всё равно подождёт.",
-      "В тебе уже есть всё, что нужно, чтобы справиться.",
-      "Даже если ты этого не чувствуешь — сила, спокойствие, свет.",
-      "Они просто прячутся, чтобы ты могла отдохнуть.",
-      "И когда почувствуешь, что готова — просто сделай маленький шаг вперёд.",
-      "Без давления, без ожиданий.",
-      "Потому что иногда достаточно просто быть.",
-      "И этого уже достаточно.",
-      "Я тебя подожду."
-    ];
+    const slidesA = [/* твои тексты */];
+    // === 29.10.2025 ===
+    const slidesB = [/* стихи */];
+    // === 30.10.2025 ===
+    const slidesC = [/* песня */];
+    // === Для тебя ===
+    const slidesD = [/* твои стихи */];
 
-    // === 29.10.2025 (стих) ===
-    const slidesB = [
-      "Пусть всё рушится вокруг,<br>Пусть шумит и бьёт метелью —<br>Сохрани в душе свой круг,<br>Тихий свет под звон капели.",
-      "Мир качнётся — не упасть,<br>Всё пройдёт, и боль растает.<br>Надо верить, надо встать,<br>Даже если сердце тает.",
-      "Всё вернётся, всё пройдёт,<br>Шум ослабнет, станет легче.<br>Каждый шторм нас приведёт<br>К новым дням, к мечте, к рассвету.",
-      "И когда утихнет шум,<br>Свет пробьётся сквозь мгновенье.<br>Просто помни: сквозь весь шум<br>Жив в тебе огонь стремленья."
+    // === Приглашение ===
+    const slidesE = [
+      "Привет, Лисица! 🦊",
+      "Знаю, дорога забрала много сил и нервов...",
+      "Давай в последний раз забудем про наши разногласия.",
+      "Я немного подготовился к этому вечеру.",
+      "Ты согласна?"
     ];
-
-    // === 30.10.2025 (песня) ===
-    const slidesC = [
-      `
-      <div>
-        <div>Вспомни и почувствуй🎵</div>
-        <audio controls preload="none">
-          <source src="song-30102025.mp3" type="audio/mpeg">
-          <source src="song-30102025.ogg" type="audio/ogg">
-          Ваш браузер не поддерживает аудио-плеер.
-        </audio>
-      </div>
-      `
+    const slidesYes = [
+      "Приезжай. Войди в комнату и просто жди, пока я позову.",
+      "Будет неплохо, если ты наденешь красивое платье."
     ];
-
-    // === Для тебя (новая открытка) ===
-    const slidesD = [
-      "Каждая страница — новое четверостишие. Это стихи, которые мне нравятся, потому что, читая их, я думаю о тебе.",
-      "Там будут звёздные огни<br>И ровная<br>Дорога<br>Тебя жду счастливые дни.<br>Потерпи<br>Немного.",
-      "Если ты устанешь сражаться,<br>То ненадолго<br>Приляг,<br>Но, сука, не смей сдаваться,<br>До победы<br>Один шаг.",
-      "Может быть, это судьба.<br>Я стал<br>Робеть.<br>Моё сердце при виде тебя<br>Говорит:<br>«Охуеть!»",
-      "Я всё лежал<br>И думал о тебе,<br>А ты так громко<br>Мне в плечо дышала,<br>Я самым был<br>Счастливым на земле,<br>А ты спала<br>И ничего не знала.",
-      "Тут будут периодически появляться новые стихи,<br>в меню поставлю дату, чтоб ты понимала."
+    const slidesNo = [
+      "Это был выбор без выбора. Нажми «Назад» и «Согласна»."
     ];
-
-    // === Скоро… ===
-    const slidesE = ["Подожди немного, скоро тут кое-что будет"];
 
     function applyBackground(v){
       document.body.className="";
@@ -183,26 +149,27 @@
     }
 
     function pauseAllAudio(){
-      document.querySelectorAll("audio").forEach(a => {
-        try { a.pause(); a.currentTime = 0; } catch {}
-      });
+      document.querySelectorAll("audio").forEach(a => { try { a.pause(); a.currentTime = 0; } catch{} });
     }
 
     function setView(newView){
       pauseAllAudio();
       view = newView;
       applyBackground(view);
+      inviteChoice = null;
 
       if(view === "menu"){
         menu.classList.remove("hidden");
         elText.classList.add("hidden");
         nav.classList.add("hidden");
+        inviteChoices.classList.add("hidden");
         return;
       }
 
       menu.classList.add("hidden");
       elText.classList.remove("hidden");
       nav.classList.remove("hidden");
+      inviteChoices.classList.add("hidden");
       index = 0;
       renderSlide();
     }
@@ -212,85 +179,86 @@
       if(view==="cardB") return slidesB;
       if(view==="cardC") return slidesC;
       if(view==="cardD") return slidesD;
-      return slidesE;
+      if(view==="cardE"){
+        if(inviteChoice==="yes") return slidesYes;
+        if(inviteChoice==="no") return slidesNo;
+        return slidesE;
+      }
+      return [];
     }
 
     function renderSlide(){
       pauseAllAudio();
-
       const slides = getSlides();
-      const raw = slides[index] || "";
+      const t = slides[index] || "";
 
-      elText.classList.remove("show","sunrise");
+      elText.classList.remove("show");
       void elText.offsetWidth;
-
-      if(view === "cardD" && raw.includes("<br>")){
-        const lines = raw.split("<br>").map(s=>s.trim()).filter(Boolean);
-        const div = document.createElement("div");
-        div.className = "poem";
-        lines.forEach((line,i)=>{
-          const span = document.createElement("span");
-          span.className = "line";
-          span.style.setProperty("--d",`${i*0.1}s`);
-          span.innerHTML = line;
-          div.appendChild(span);
-        });
-        elText.innerHTML = "";
-        elText.appendChild(div);
-      } else {
-        elText.innerHTML = raw;
-      }
-
-      if(index===0) elText.classList.add("sunrise");
+      elText.innerHTML = t;
       elText.classList.add("show");
-      btnNext.classList.toggle("hidden", index >= slides.length - 1);
+
+      if(view==="cardE" && inviteChoice===null && index===slidesE.length-1){
+        nav.classList.add("hidden");
+        inviteChoices.classList.remove("hidden");
+      } else {
+        inviteChoices.classList.add("hidden");
+        nav.classList.remove("hidden");
+        btnNext.classList.toggle("hidden", index >= slides.length - 1);
+      }
     }
 
     function openCard(which){
-      const name =
-        which==="cardA" ? "28.10.2025" :
-        which==="cardB" ? "29.10.2025" :
-        which==="cardC" ? "30.10.2025" :
-        which==="cardD" ? "Для тебя" : "Скоро";
+      const name = which==="cardA"?"28.10.2025":
+                   which==="cardB"?"29.10.2025":
+                   which==="cardC"?"30.10.2025":
+                   which==="cardD"?"Для тебя":"Приглашение";
       notifySelection(name);
       setView(which);
     }
 
-    btnOpenA.addEventListener("click", ()=>openCard("cardA"));
-    btnOpenB.addEventListener("click", ()=>openCard("cardB"));
-    btnOpenC.addEventListener("click", ()=>openCard("cardC"));
-    btnOpenD.addEventListener("click", ()=>openCard("cardD"));
-    btnOpenE.addEventListener("click", ()=>openCard("cardE"));
+    btnOpenA.onclick = ()=>openCard("cardA");
+    btnOpenB.onclick = ()=>openCard("cardB");
+    btnOpenC.onclick = ()=>openCard("cardC");
+    btnOpenD.onclick = ()=>openCard("cardD");
+    btnOpenE.onclick = ()=>openCard("cardE");
 
-    btnNext.addEventListener("click", ()=>{
+    btnNext.onclick = ()=>{
       const slides = getSlides();
-      if(index < slides.length - 1){ index++; renderSlide(); }
-    });
+      if(index < slides.length-1){ index++; renderSlide(); }
+    };
 
-    btnPrev.addEventListener("click", ()=>{
-      if(view!=="menu" && index===0){
-        setView("menu");
-      } else if (view!=="menu" && index>0){
-        index--; renderSlide();
-      }
-    });
+    // 🔹 Исправленный блок "Назад"
+    btnPrev.onclick = ()=>{
+      if(view==="menu") return;
 
-    window.addEventListener("keydown",(e)=>{
-      const tag = document.activeElement?.tagName?.toLowerCase();
-      if(tag==="input"||tag==="textarea") return;
-      if(view==="menu"){
-        if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openCard("cardA"); }
-        return;
+      // особое поведение для Приглашения
+      if(view==="cardE"){
+        if((inviteChoice==="yes" || inviteChoice==="no") && index===0){
+          // возвращаемся на вопрос "Ты согласна?"
+          inviteChoice = null;
+          index = slidesE.length - 1;
+          renderSlide();
+          return;
+        }
       }
-      if(e.key==="ArrowLeft") btnPrev.click();
-      if(e.key==="Enter"||e.key===" "){
-        e.preventDefault();
-        if(!btnNext.classList.contains("hidden")) btnNext.click();
-      }
-    });
+
+      // стандартное поведение
+      if(index===0){ setView("menu"); }
+      else { index--; renderSlide(); }
+    };
+
+    btnAgree.onclick = ()=>{
+      inviteChoice="yes";
+      notifySelection("Приглашение — согласна");
+      index=0; renderSlide();
+    };
+    btnDisagree.onclick = ()=>{
+      inviteChoice="no";
+      notifySelection("Приглашение — не согласна");
+      index=0; renderSlide();
+    };
 
     setView("menu");
   </script>
 </body>
 </html>
-
